@@ -172,9 +172,7 @@ function PlaylistContent() {
       alert('올바른 YouTube 링크를 입력해주세요')
       return
     }
-    const videoId = newSongUrl.includes('v=')
-      ? newSongUrl.split('v=')[1]?.split('&')[0]
-      : newSongUrl.split('/').pop()
+const videoId = getYoutubeId(newSongUrl)
     const { error } = await supabase.from('songs').insert({
       playlist_id: id,
       title: newSongTitle || 'YouTube 곡',
@@ -232,11 +230,16 @@ function PlaylistContent() {
     fetchComments()
   }
 
-  function getYoutubeId(url) {
-    if (!url) return null
-    const match = url.match(/(?:v=|youtu\.be\/)([^&\s]+)/)
-    return match ? match[1] : null
-  }
+function getYoutubeId(url) {
+  if (!url) return null
+  // youtu.be 형식 (si 파라미터 포함)
+  const shortMatch = url.match(/youtu\.be\/([^?&\s]+)/)
+  if (shortMatch) return shortMatch[1]
+  // youtube.com 형식
+  const longMatch = url.match(/[?&]v=([^&\s]+)/)
+  if (longMatch) return longMatch[1]
+  return null
+}
 
   if (loading) return (
     <div style={{ minHeight: '100vh', background: '#0a0a0f', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#b9ff66', fontSize: '16px' }}>
