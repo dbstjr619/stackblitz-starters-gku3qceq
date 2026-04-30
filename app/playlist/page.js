@@ -167,11 +167,53 @@ function PlaylistContent() {
     setSaved(!saved)
   }
 
-  async function addNewSong() {
-    if (!newSongUrl.includes('youtube') && !newSongUrl.includes('youtu.be')) {
-      alert('올바른 YouTube 링크를 입력해주세요')
-      return
-    }
+ async function addNewSong() {
+  if (!newSongUrl.includes('youtube') && !newSongUrl.includes('youtu.be')) {
+    alert('올바른 YouTube 링크를 입력해주세요')
+    return
+  }
+  const shortMatch = newSongUrl.match(/youtu\.be\/([^?&\s]+)/)
+  const longMatch = newSongUrl.match(/[?&]v=([^&\s]+)/)
+  const videoId = shortMatch ? shortMatch[1] : longMatch ? longMatch[1] : null
+
+  if (!videoId) {
+    alert('올바른 YouTube 링크를 입력해주세요')
+    return
+  }
+
+  // Edge Function으로 제목 자동 가져오기
+  let title = 'YouTube 곡'
+  let artist = 'YouTube'
+  try {
+    const res = await fetch(
+      'https://urfvlqbftchgiiweabho.supabase.co/functions/v1/get-youtube-title',
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ videoId })
+      }
+    )
+    const data = await res.json()
+    if (data.title) title = data.title
+    if (data.artist) artist = data.artist
+  } catch {}
+
+  const { error } = await supabase.from('songs').insert({
+    playlist_id: id,
+    title,
+    artist,
+    youtube_url: newSongUrl,
+    thumbnail_url: `https://img.youtube.com/vi/${videoId}/0.jpg`,
+    order_index: songs.length
+  })
+  if (!error) {
+    setNewSongUrl('')
+    setNewSongTitle('')
+    setNewSongArtist('')
+    setShowAddSong(false)
+    fetchAll(user.id)
+  }
+}
 const videoId = getYoutubeId(newSongUrl)
     const { error } = await supabase.from('songs').insert({
       playlist_id: id,
