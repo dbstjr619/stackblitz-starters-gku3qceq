@@ -36,7 +36,6 @@ function PlaylistContent() {
     })
   }, [id])
 
-  // YouTube IFrame API 로드
   useEffect(() => {
     if (window.YT) return
     const tag = document.createElement('script')
@@ -44,7 +43,6 @@ function PlaylistContent() {
     document.head.appendChild(tag)
   }, [])
 
-  // 곡 변경 시 플레이어 업데이트
   useEffect(() => {
     if (!currentSong) return
     currentSongRef.current = currentSong
@@ -80,9 +78,7 @@ function PlaylistContent() {
     const current = currentSongRef.current
     const songsList = songsRef.current
     const idx = songsList.findIndex(s => s.id === current?.id)
-    if (idx < songsList.length - 1) {
-      setCurrentSong(songsList[idx + 1])
-    }
+    if (idx < songsList.length - 1) setCurrentSong(songsList[idx + 1])
   }
 
   function playNext() {
@@ -167,58 +163,40 @@ function PlaylistContent() {
     setSaved(!saved)
   }
 
- async function addNewSong() {
-  if (!newSongUrl.includes('youtube') && !newSongUrl.includes('youtu.be')) {
-    alert('올바른 YouTube 링크를 입력해주세요')
-    return
-  }
-  const shortMatch = newSongUrl.match(/youtu\.be\/([^?&\s]+)/)
-  const longMatch = newSongUrl.match(/[?&]v=([^&\s]+)/)
-  const videoId = shortMatch ? shortMatch[1] : longMatch ? longMatch[1] : null
+  async function addNewSong() {
+    if (!newSongUrl.includes('youtube') && !newSongUrl.includes('youtu.be')) {
+      alert('올바른 YouTube 링크를 입력해주세요')
+      return
+    }
+    const shortMatch = newSongUrl.match(/youtu\.be\/([^?&\s]+)/)
+    const longMatch = newSongUrl.match(/[?&]v=([^&\s]+)/)
+    const videoId = shortMatch ? shortMatch[1] : longMatch ? longMatch[1] : null
 
-  if (!videoId) {
-    alert('올바른 YouTube 링크를 입력해주세요')
-    return
-  }
+    if (!videoId) {
+      alert('올바른 YouTube 링크를 입력해주세요')
+      return
+    }
 
-  // Edge Function으로 제목 자동 가져오기
-  let title = 'YouTube 곡'
-  let artist = 'YouTube'
-  try {
-    const res = await fetch(
-      'https://urfvlqbftchgiiweabho.supabase.co/functions/v1/get-youtube-title',
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ videoId })
-      }
-    )
-    const data = await res.json()
-    if (data.title) title = data.title
-    if (data.artist) artist = data.artist
-  } catch {}
+    let title = 'YouTube 곡'
+    let artist = 'YouTube'
+    try {
+      const res = await fetch(
+        'https://urfvlqbftchgiiweabho.supabase.co/functions/v1/get-youtube-title',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ videoId })
+        }
+      )
+      const data = await res.json()
+      if (data.title) title = data.title
+      if (data.artist) artist = data.artist
+    } catch {}
 
-  const { error } = await supabase.from('songs').insert({
-    playlist_id: id,
-    title,
-    artist,
-    youtube_url: newSongUrl,
-    thumbnail_url: `https://img.youtube.com/vi/${videoId}/0.jpg`,
-    order_index: songs.length
-  })
-  if (!error) {
-    setNewSongUrl('')
-    setNewSongTitle('')
-    setNewSongArtist('')
-    setShowAddSong(false)
-    fetchAll(user.id)
-  }
-}
-const videoId = getYoutubeId(newSongUrl)
     const { error } = await supabase.from('songs').insert({
       playlist_id: id,
-      title: newSongTitle || 'YouTube 곡',
-      artist: newSongArtist || 'YouTube',
+      title,
+      artist,
       youtube_url: newSongUrl,
       thumbnail_url: `https://img.youtube.com/vi/${videoId}/0.jpg`,
       order_index: songs.length
@@ -272,16 +250,14 @@ const videoId = getYoutubeId(newSongUrl)
     fetchComments()
   }
 
-function getYoutubeId(url) {
-  if (!url) return null
-  // youtu.be 형식 (si 파라미터 포함)
-  const shortMatch = url.match(/youtu\.be\/([^?&\s]+)/)
-  if (shortMatch) return shortMatch[1]
-  // youtube.com 형식
-  const longMatch = url.match(/[?&]v=([^&\s]+)/)
-  if (longMatch) return longMatch[1]
-  return null
-}
+  function getYoutubeId(url) {
+    if (!url) return null
+    const shortMatch = url.match(/youtu\.be\/([^?&\s]+)/)
+    if (shortMatch) return shortMatch[1]
+    const longMatch = url.match(/[?&]v=([^&\s]+)/)
+    if (longMatch) return longMatch[1]
+    return null
+  }
 
   if (loading) return (
     <div style={{ minHeight: '100vh', background: '#0a0a0f', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#b9ff66', fontSize: '16px' }}>
@@ -298,8 +274,6 @@ function getYoutubeId(url) {
 
   return (
     <div style={{ minHeight: '100vh', background: '#0a0a0f', fontFamily: 'DM Sans, sans-serif', paddingBottom: '40px' }}>
-
-      {/* 네비게이션 */}
       <div style={{ position: 'sticky', top: 0, zIndex: 50, background: 'rgba(10,10,15,0.9)', backdropFilter: 'blur(12px)', borderBottom: '1px solid rgba(255,255,255,0.07)', padding: '12px 20px', display: 'flex', alignItems: 'center', gap: '12px' }}>
         <button onClick={() => router.push('/feed')} style={{ width: '32px', height: '32px', borderRadius: '50%', background: '#1c1c27', border: '1px solid rgba(255,255,255,0.07)', color: '#f0f0f0', cursor: 'pointer', fontSize: '16px' }}>←</button>
         <div style={{ flex: 1, fontSize: '15px', fontWeight: '500', color: '#f0f0f0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{playlist.title}</div>
@@ -307,7 +281,6 @@ function getYoutubeId(url) {
 
       <div style={{ maxWidth: '520px', margin: '0 auto', padding: '20px' }}>
 
-        {/* YouTube 플레이어 */}
         {currentSong && (
           <div style={{ background: '#13131a', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '16px', overflow: 'hidden', marginBottom: '16px' }}>
             <div id="yt-player" style={{ width: '100%', aspectRatio: '16/9' }}></div>
@@ -324,7 +297,6 @@ function getYoutubeId(url) {
           </div>
         )}
 
-        {/* 플레이리스트 정보 */}
         <div style={{ background: '#13131a', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '16px', padding: '16px', marginBottom: '16px' }}>
           <div style={{ fontSize: '20px', fontWeight: '600', color: '#f0f0f0', marginBottom: '6px' }}>{playlist.title}</div>
           {playlist.description && <div style={{ fontSize: '13px', color: '#6b6b80', marginBottom: '10px', lineHeight: '1.5' }}>{playlist.description}</div>}
@@ -357,7 +329,6 @@ function getYoutubeId(url) {
           </div>
         </div>
 
-        {/* 곡 목록 */}
         <div style={{ background: '#13131a', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '16px', padding: '16px', marginBottom: '16px' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
             <div style={{ fontSize: '11px', fontWeight: '500', color: '#6b6b80', textTransform: 'uppercase', letterSpacing: '0.8px' }}>곡 목록 {songs.length}개</div>
@@ -376,14 +347,6 @@ function getYoutubeId(url) {
                   placeholder="https://youtube.com/watch?v=..."
                   style={{ flex: 1, background: '#13131a', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '10px', padding: '9px 12px', fontSize: '12px', color: '#f0f0f0', outline: 'none' }} />
                 <button onClick={addNewSong} style={{ padding: '0 14px', background: '#b9ff66', border: 'none', borderRadius: '10px', fontSize: '12px', fontWeight: '600', color: '#0a0a0f', cursor: 'pointer', whiteSpace: 'nowrap' }}>추가</button>
-              </div>
-              <div style={{ display: 'flex', gap: '8px' }}>
-                <input value={newSongTitle} onChange={e => setNewSongTitle(e.target.value)}
-                  placeholder="곡 제목 (선택)"
-                  style={{ flex: 1, background: '#13131a', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '10px', padding: '9px 12px', fontSize: '12px', color: '#f0f0f0', outline: 'none' }} />
-                <input value={newSongArtist} onChange={e => setNewSongArtist(e.target.value)}
-                  placeholder="아티스트 (선택)"
-                  style={{ flex: 1, background: '#13131a', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '10px', padding: '9px 12px', fontSize: '12px', color: '#f0f0f0', outline: 'none' }} />
               </div>
             </div>
           )}
@@ -409,7 +372,6 @@ function getYoutubeId(url) {
           ))}
         </div>
 
-        {/* 댓글 */}
         <div style={{ background: '#13131a', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '16px', padding: '16px' }}>
           <div style={{ fontSize: '11px', fontWeight: '500', color: '#6b6b80', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: '14px' }}>댓글 {comments.length}</div>
           <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
