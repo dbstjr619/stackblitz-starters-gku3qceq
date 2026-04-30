@@ -60,17 +60,16 @@ export default function Upload() {
     }
 
     try {
-      const res = await fetch(
-        'https://urfvlqbftchgiiweabho.supabase.co/functions/v1/get-youtube-title',
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer sb_publishable_znXTu-Uj_AWMh2Pzpbp93g_wSMDp9dQ'
-          },
-          body: JSON.stringify({ videoId })
-        }
-      )
+const res = await fetch(
+  'https://urfvlqbftchgiiweabho.supabase.co/functions/v1/get-youtube-title',
+  {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ videoId })
+  }
+)
       const data = await res.json()
       setSongs(prev => [...prev, {
         title: data.title || 'YouTube 곡',
