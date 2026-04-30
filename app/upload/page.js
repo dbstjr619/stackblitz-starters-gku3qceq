@@ -53,9 +53,13 @@ export default function Upload() {
       setError('올바른 YouTube 링크를 입력해주세요');
       return;
     }
-    const videoId = youtubeUrl.includes('v=')
-      ? youtubeUrl.split('v=')[1]?.split('&')[0]
-      : youtubeUrl.split('/').pop();
+const videoId = (() => {
+  const shortMatch = youtubeUrl.match(/youtu\.be\/([^?&\s]+)/)
+  if (shortMatch) return shortMatch[1]
+  const longMatch = youtubeUrl.match(/[?&]v=([^&\s]+)/)
+  if (longMatch) return longMatch[1]
+  return null
+})()
     setSongs((prev) => [
       ...prev,
       {
