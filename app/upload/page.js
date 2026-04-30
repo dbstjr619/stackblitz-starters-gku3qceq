@@ -63,6 +63,48 @@ async function addSongFromUrl() {
     return
   }
 
+  try {
+    const res = await fetch(
+      'https://urfvlqbftchgiiweabho.supabase.co/functions/v1/get-youtube-title',
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ videoId })
+      }
+    )
+    const data = await res.json()
+
+    setSongs(prev => [...prev, {
+      title: data.title || 'YouTube 곡',
+      artist: data.artist || 'YouTube',
+      youtube_url: youtubeUrl,
+      thumbnail_url: `https://img.youtube.com/vi/${videoId}/0.jpg`,
+      order_index: prev.length
+    }])
+    setYoutubeUrl('')
+    setError('')
+  } catch {
+    setSongs(prev => [...prev, {
+      title: 'YouTube 곡 ' + (prev.length + 1),
+      artist: 'YouTube',
+      youtube_url: youtubeUrl,
+      thumbnail_url: `https://img.youtube.com/vi/${videoId}/0.jpg`,
+      order_index: prev.length
+    }])
+    setYoutubeUrl('')
+    setError('')
+  }
+}
+
+  const shortMatch = youtubeUrl.match(/youtu\.be\/([^?&\s]+)/)
+  const longMatch = youtubeUrl.match(/[?&]v=([^&\s]+)/)
+  const videoId = shortMatch ? shortMatch[1] : longMatch ? longMatch[1] : null
+
+  if (!videoId) {
+    setError('올바른 YouTube 링크를 입력해주세요')
+    return
+  }
+
   // noembed.com 으로 제목 가져오기 (CORS 허용)
   try {
     const res = await fetch(`https://noembed.com/embed?url=https://www.youtube.com/watch?v=${videoId}`)
