@@ -48,11 +48,34 @@ export default function Upload() {
     ]);
   }
 
-  function addSongFromUrl() {
-    if (!youtubeUrl.includes('youtube') && !youtubeUrl.includes('youtu.be')) {
-      setError('올바른 YouTube 링크를 입력해주세요');
-      return;
-    }
+async function addSongFromUrl() {
+  if (!youtubeUrl.includes('youtube') && !youtubeUrl.includes('youtu.be')) {
+    setError('올바른 YouTube 링크를 입력해주세요')
+    return
+  }
+
+  // oEmbed로 제목 자동 가져오기
+  try {
+    const res = await fetch(`https://www.youtube.com/oembed?url=${encodeURIComponent(youtubeUrl)}&format=json`)
+    const data = await res.json()
+
+    const shortMatch = youtubeUrl.match(/youtu\.be\/([^?&\s]+)/)
+    const longMatch = youtubeUrl.match(/[?&]v=([^&\s]+)/)
+    const videoId = shortMatch ? shortMatch[1] : longMatch ? longMatch[1] : null
+
+    setSongs(prev => [...prev, {
+      title: data.title || 'YouTube 곡',
+      artist: data.author_name || 'YouTube',
+      youtube_url: youtubeUrl,
+      thumbnail_url: videoId ? `https://img.youtube.com/vi/${videoId}/0.jpg` : '',
+      order_index: prev.length
+    }])
+    setYoutubeUrl('')
+    setError('')
+  } catch {
+    setError('영상 정보를 가져올 수 없어요. 링크를 확인해주세요.')
+  }
+}
 const videoId = (() => {
   const shortMatch = youtubeUrl.match(/youtu\.be\/([^?&\s]+)/)
   if (shortMatch) return shortMatch[1]
