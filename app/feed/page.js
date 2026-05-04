@@ -22,7 +22,7 @@ export default function Feed() {
   async function fetchPlaylists() {
     const { data, error } = await supabase
       .from('playlists')
-      .select(`*, profiles (nickname), songs (id, thumbnail_url), likes (id)`)
+      .select(`*, profiles (nickname), songs (id, thumbnail_url), likes (id), comments (id)`)
       .order('created_at', { ascending: false })
     if (!error) setPlaylists(data || [])
     setLoading(false)
@@ -116,6 +116,7 @@ export default function Feed() {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', paddingTop: '10px', borderTop: '1px solid rgba(255,255,255,0.07)' }}>
                   <span style={{ fontSize: '12px', color: '#6b6b80' }}>🎵 {pl.songs?.length || 0}곡</span>
                   <span style={{ fontSize: '12px', color: '#6b6b80' }}>♥ {pl.likes?.length || 0}</span>
+                  <span style={{ fontSize: '12px', color: '#6b6b80' }}>💬 {pl.comments?.length || 0}</span>
                 </div>
               </div>
             </div>
