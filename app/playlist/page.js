@@ -91,6 +91,28 @@ function PlaylistContent() {
     if (idx > 0) setCurrentSong(songs[idx - 1])
   }
 
+  // 같은 곡 클릭해도 재생되도록
+  function playSong(song) {
+    if (currentSong?.id === song.id) {
+      const videoId = getYoutubeId(song.youtube_url)
+      if (videoId && playerRef.current && playerRef.current.loadVideoById) {
+        playerRef.current.loadVideoById(videoId)
+      } else if (videoId && window.YT && window.YT.Player) {
+        playerRef.current = new window.YT.Player('yt-player', {
+          videoId,
+          playerVars: { autoplay: 1, rel: 0, modestbranding: 1 },
+          events: {
+            onStateChange: (e) => {
+              if (e.data === window.YT.PlayerState.ENDED) playNextAuto()
+            }
+          }
+        })
+      }
+    } else {
+      setCurrentSong(song)
+    }
+  }
+
   async function fetchAll(userId) {
     const { data: pl } = await supabase
       .from('playlists').select('*, profiles(nickname)')
@@ -355,7 +377,7 @@ function PlaylistContent() {
             <div style={{ textAlign: 'center', padding: '20px', color: '#6b6b80', fontSize: '13px' }}>곡이 없어요</div>
           ) : songs.map((s, i) => (
             <div key={s.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px', borderRadius: '10px', background: currentSong?.id === s.id ? 'rgba(185,255,102,0.07)' : 'transparent', border: currentSong?.id === s.id ? '1px solid rgba(185,255,102,0.15)' : '1px solid transparent', marginBottom: '4px' }}>
-              <div onClick={() => setCurrentSong(s)} style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1, minWidth: 0, cursor: 'pointer' }}>
+              <div onClick={() => playSong(s)} style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1, minWidth: 0, cursor: 'pointer' }}>
                 <span style={{ fontSize: '11px', color: '#6b6b80', width: '16px' }}>{i + 1}</span>
                 <div style={{ width: '40px', height: '40px', borderRadius: '8px', background: '#1c1c27', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', overflow: 'hidden', flexShrink: 0 }}>
                   {s.thumbnail_url ? <img src={s.thumbnail_url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : '🎵'}
